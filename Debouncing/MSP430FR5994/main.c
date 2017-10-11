@@ -6,33 +6,43 @@
  * problems with interupt during debounce
  */
 
-int x = 0;//debounce vote
-int y = 0;//button identifier
-int count=0;//number of timer interupts
-
+int count1=0;//number of timer interupts for button 1
+int count2=0;//number of timer interupts for button 2
+int b1=0;
+int b2=0;
 
 int main(void)
 {
-    WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
-    PM5CTL0 &= ~LOCKLPM5;  // Disable the GPIO power-on default high-impedance mode
-
-//configure LED 1
-    P1DIR|=BIT0; // sets p1 bit 0 and 1 for output
-    P1SEL1=0x00;// sets p1 bit 0 to I/O
-    P1SEL0=0x00;//sets p1 bit 0 to I/O
-    P1OUT=0x00; //Turns led off
-
-//configure buttons
-    P5REN|=BIT6+BIT5; //enables resistor for p1 bit 5
-    P5DIR&=~(BIT6+BIT5); // sets p5 bit 5 for input
-    P5SEL1&=~(BIT6+BIT5); //sets p5 bit 5 for I/O
-    P5SEL0&=~(BIT6+BIT5); //sets p5 bit 5 for I/O
-    P5OUT|=(BIT6+BIT5); // sets p5 bit 5 resistor for pull up
-    P5IES|=(BIT6+BIT5);//flags interupt on first press bounce
-    P5IE|=(BIT6+BIT5);//enable interupt detection
-    P5IFG&=~(BIT6+BIT5);//clears p5 flag register
+//initialize device
+    WDTCTL = WDTPW | WDTHOLD;    // stop watchdog timer
+    PM5CTL0 &= ~LOCKLPM5; // Disable the GPIO power-on default high-impedance mode
+//initilize LEDs
+    P1DIR |= BIT0+BIT1; // sets P1.0 and P1.1 direction to 1 for output
+    P1SEL1&=(BIT1+BIT0);// sets P1.0 select1 to 0 for I/O
+    P1SEL0&=(BIT1+BIT0);//sets P1.0 select 2 to 0 for I/O
+    P1OUT&=(BIT1+BIT0); //Sets P1.0 output to 0
+//intialize button 1
+    P5REN|=BIT6; //enables resistor for P5.6
+    P5DIR&=~BIT6; // sets P5.6 for input
+    P5SEL1&=~BIT6; //sets P5.6 for I/O
+    P5SEL0&=~BIT6; //sets P5.6 for I/O
+    P5OUT|=BIT6; // sets P5.6 resistor for pull up
+    P5IES|=BIT6;//flags interupt on negative
+    P5IE|=BIT6;//enable interupt detection
+    P5IFG&=BIT5;//clears P5.6 flag register
+//initialize button 2
+    P5REN|=BIT5; //sets P5.5 REN to 1 to enable resistor
+    P5DIR&=~BIT5; // sets P5.5 direction to 0 for input
+    P5SEL1&=~BIT5; //sets P5.5 select1 to 0 for I/O
+    P5SEL0&=~BIT5; //sets P5.5 select0 to 0 for I/O
+    P5OUT|=BIT5; // sets P5.5 to 1 to set resistor to pull up
+    P5IES|=BIT5;//flags interupt on negative
+    P5IE|=BIT5;//enable interupt detection
+    P5IFG&=BIT5;//clears P5.5 flag register
 
     TA0CCR0=1000;//sets timer0 to 1 Khz
+    TA0CCTL0=CCIE;
+    TA0CTL= (MC_1 + TASSEL__SMCLK+TACLR);//set timer0 to up, SMCLK, no division
 
     _BIS_SR(LPM0_bits + GIE);//enters low power mode with interupts
 }
@@ -41,92 +51,69 @@ int main(void)
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer0_A0_ISR (void)
 {
-    if(y==6){       //if button 6 was pressed
-        count+=1;//counts how many times the interupt runs
-        if(count>40){
-            if(x<-25){
-                y=-6;
-                P5IE|=BIT6;
-                TA0CTL=TACLR;
-                TA0CCTL0&=~CCIE;//enable timer interupts
-            }
-            else {
-                y=-6;
-                P1OUT^=BIT0;
-                P5IE|=BIT6;
-                TA0CTL=TACLR;
-                TA0CCTL0&=~CCIE;//enable timer interupts
-            }
-        }
-        else if((P5IN&BIT6)==BIT6){//checks if button is not pressed
-            x-=1;//decreased x to represent a button not pressed
-        }
-        else if((~P5IN&BIT6)==BIT6){//checks if button is not pressed
-            x+=1;//decreased x to represent a button not pressed
-        }
+    if(count1<60)
+        count1+=1;
+    if(count2<60)
+        count2+=1;
+    if((count1>50)&(b1==1))
+    {
+        b1=-1;
+        P1OUT^=BIT0;
+        P5IE|=BIT6;
     }
-    if(y==5){       //if button 6 was pressed
-        count+=1;//counts how many times the interupt runs
-        if(count>40){
-            if(x<-25){
-                y=-5;
-                P5IE|=BIT5;
-                TA0CTL=TACLR;
-                TA0CCTL0&=~CCIE;//enable timer interupts
-            }
-            else {
-                y=-5;
-                P1OUT^=BIT0;
-                P5IE|=BIT5;
-                TA0CTL=TACLR;
-                TA0CCTL0&=~CCIE;//enable timer interupts
-            }
-        }
-        else if((P5IN&BIT5)==BIT5){//checks if button is not pressed
-            x-=1;//decreased x to represent a button not pressed
-        }
-        else if((~P5IN&BIT5)==BIT5){//checks if button is not pressed
-            x+=1;//decreased x to represent a button not pressed
-        }
+    if((count1>50)&(b1==-2))
+    {
+        P1OUT^=BIT0;
+        b1=0;
+        P5IE|=BIT6;
+    }
+    if((count2>50)&(b2==1))
+    {
+        b2=-1;
+        P1OUT^=BIT1;
+        P5IE|=BIT5;
+    }
+     if((count2>50)&(b2==-2))
+    {
+        P1OUT^=BIT1;
+        b2=0;
+        P5IE|=BIT5;
     }
 }
-
 #pragma vector=PORT5_VECTOR
 __interrupt void Port_5(void)
 {
-    if(((~P5IN&BIT6)==BIT6)&(y==0))//checks if button 1 was pressed initially
+    if(((~P5IN&BIT6)==BIT6)&(b1==0))//checks if button 1 was pressed initiallb1
     {
-        TA0CCTL0|=CCIE;//enable timer interupts
-        TA0CTL= (MC_1 + TASSEL__SMCLK+TACLR);//set timer0 to up, SMCLK, no division
-        P5IE&=~BIT6;//disable button interupts while debouncing
-        P5IES&=~BIT6;//detects first bounce when released
-        y=6;//set button identifier to 6
+        count1=0;
+        b1=1;//set button identifier to 1
+        P5IE&=~BIT6;//detects first bounce when released
+        P5IES^=BIT6;//detects first bounce when released
         P5IFG=~BIT6;//resets p1 bit 1 flag
     }
-    else if(((P5IN&BIT6)==BIT6)&(y==-6)) //checks if button 1 was released
+    if(((P5IN&BIT6)==BIT6)&(b1==-1)) //checks if button 1 was released
     {
-        count=0;
-        x=0;//clears debounce counter
-        y=0;//resets identifier
-        P5IES|=BIT6;//detects first bounce when pressed
+        b1=-2;//sets button 1 identifier to -1 to indicate not pressed
+        count1=0;//resets count variable before use
+       P5IE&=~BIT6;//disable interupts while debouncing
+        P5IES^=BIT6;//detects first bounce when pressed
         P5IFG&=~BIT6;//resets p1 bit 1 flag
 
     }
-    if(((~P5IN&BIT5)==BIT5)&(y==0))//checks if button 1 was pressed initially
+    if(((~P5IN&BIT5)==BIT5)&(b2==0))//checks if button 1 was pressed initiallb1
     {
-        TA0CCTL0|=CCIE;//enable timer interupts
-        TA0CTL= (MC_1 + TASSEL__SMCLK+TACLR);//set timer0 to up, SMCLK, no division
-        P5IE&=~BIT5;//disable button interupts while debouncing
-        P5IES&=~BIT5;//detects first bounce when released
-        y=5;//set button identifier to 6
-        P5IFG=~BIT6;//resets p1 bit 1 flag
+        count2=0;
+        b2=1;//set button identifier to 1
+        P5IE&=~BIT5;//detects first bounce when released
+        P5IES^=BIT5;//detects first bounce when released
+        P5IFG=~BIT5;//resets p1 bit 1 flag
     }
-    else if(((P5IN&BIT5)==BIT5)&(y==-5)) //checks if button 1 was released
+    if(((P5IN&BIT5)==BIT5)&(b2==-1)) //checks if button 1 was released
     {
-        count=0;
-        x=0;//clears debounce counter
-        y=0;//resets identifier
-        P5IES|=BIT5;//detects first bounce when pressed
+        b2=-2;//sets button 1 identifier to -1 to indicate not pressed
+        count2=0;//resets count variable before use
+        P5IE&=~BIT5;//disable interupts while debouncing
+        P5IES^=BIT5;//detects first bounce when pressed
         P5IFG&=~BIT5;//resets p1 bit 1 flag
 
     }
