@@ -8,11 +8,12 @@
 
 int count1=0;//number of timer interupts for button 1
 int count2=0;//number of timer interupts for button 2
-int b1=0;
-int b2=0;
+int b1=0;//number to determine button 1 state
+int b2=0;//number to determine button 2 state
 
 int main(void)
 {
+//initialize device
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
     PM5CTL0 &= ~LOCKLPM5;  // Disable the GPIO power-on default high-impedance mode
 
@@ -38,7 +39,7 @@ int main(void)
     P1IFG&=~(BIT1+BIT2);//clears P1 flag register
 
     TA0CCR0=1000;//sets timer0 to 1 Khz
-    TA0CCTL0=CCIE;
+    TA0CCTL0=CCIE;//enable CCR0 interupts
     TA0CTL= (MC_1 + TASSEL__SMCLK+TACLR);//set timer0 to up, SMCLK, no division
 
     _BIS_SR(LPM0_bits + GIE);//enters low power mode with interupts
@@ -48,33 +49,33 @@ int main(void)
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer0_A0_ISR (void)
 {
-    if(count1<60)
-        count1+=1;
-    if(count2<60)
-        count2+=1;
-    if((count1>50)&(b1==1))
+    if(count1<60)//checks if count1 is less than 60
+        count1+=1;//increments count1 by 1
+    if(count2<60)//checks if count2 is less than 6
+        count2+=1;//increments count2 by 1
+    if((count1>50)&(b1==1))//checks if count is greater than 50 and b1 is 1
     {
-        b1=-1;
-        P1OUT^=BIT0;
-        P1IE|=BIT1;
+        b1=-1;//sets b1 to negative
+        P1OUT^=BIT0;//toggles led output
+        P1IE|=BIT1;//enables button interupt
     }
-    if((count1>50)&(b1==-2))
+    if((count1>50)&(b1==-2))//checks if count1 is greater than 50 and b1 is -2
     {
-        P1OUT^=BIT0;
-        b1=0;
-        P1IE|=BIT1;
+        P1OUT^=BIT0;//toggles led1 output
+        b1=0;//sets b1 to 0
+        P1IE|=BIT1;//enables button1 interupts
     }
-    if((count2>50)&(b2==1))
+    if((count2>50)&(b2==1))//checks if count2 is greater than 50 and b2 is 1
     {
-        b2=-1;
-        P9OUT^=BIT7;
-        P1IE|=BIT2;
+        b2=-1;//sets b2 to negative 1
+        P9OUT^=BIT7;//toggles led output
+        P1IE|=BIT2;//enables button interupt
     }
-     if((count2>50)&(b2==-2))
+     if((count2>50)&(b2==-2))//checks if count2 is greater than 50 and b1 is -2
     {
-        P9OUT^=BIT7;
-        b2=0;
-        P1IE|=BIT2;
+        P9OUT^=BIT7;;//toggles led2 output
+        b2=0;//sets b2 to 0
+        P1IE|=BIT2;//enables button1 interupts
     }
 }
 #pragma vector=PORT1_VECTOR

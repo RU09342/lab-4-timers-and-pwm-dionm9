@@ -7,10 +7,11 @@
  */
 
 int count1=0;//number of timer interupts for button 1
-int b1=0;
+int b1=0;//number to determine button 1 state
 
 int main(void)
 {
+//initialize device
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
     PM5CTL0 &= ~LOCKLPM5;  // Disable the GPIO power-on default high-impedance mode
 
@@ -30,7 +31,7 @@ int main(void)
     P1IFG&=~BIT1;//clears p2 flag register
 
     TB0CCR0=1000;//sets timer0 to 1 Khz
-    TB0CCTL0=CCIE;
+    TB0CCTL0=CCIE;//enable CCR0 interupts
     TB0CTL= (MC_1 + TBSSEL__SMCLK+TBCLR);//set timer0 to up, SMCLK, no division
 
     _BIS_SR(LPM0_bits + GIE);//enters low power mode with interupts
@@ -40,19 +41,19 @@ int main(void)
 #pragma vector=TIMER0_B0_VECTOR
 __interrupt void Timer0_B0_ISR (void)
 {
-    if(count1<60)
-        count1+=1;
-    if((count1>50)&(b1==1))
+    if(count1<60)//checks if count is less than 60
+        count1+=1;//increments count by 1
+    if((count1>50)&(b1==1))//checks if count is greater than 50 and b1 is 1
     {
-        b1=-1;
-        P1OUT^=BIT0;
-        P1IE|=BIT1;
+        b1=-1;//sets b1 to negative 1
+        P1OUT^=BIT0;//toggles led output
+        P1IE|=BIT1;//enables button interupts
     }
-    if((count1>50)&(b1==-2))
+    if((count1>50)&(b1==-2))//checks if count is greater than 50 and b1 is -2
     {
-        P1OUT^=BIT0;
-        b1=0;
-        P1IE|=BIT1;
+        P1OUT^=BIT0;//toggles led output
+        b1=0;//sets b1 to 0
+        P1IE|=BIT1;//enables button interupts
     }
 }
 #pragma vector=PORT1_VECTOR
@@ -60,7 +61,7 @@ __interrupt void Port_1(void)
 {
     if(((~P1IN&BIT1)==BIT1)&(b1==0))//checks if button 1 was pressed initiallb1
     {
-        count1=0;
+        count1=0;//resets count1 variable
         b1=1;//set button identifier to 1
         P1IE&=~BIT1;//detects first bounce when released
         P1IES^=BIT1;//detects first bounce when released

@@ -7,7 +7,7 @@
  */
 
 int count1=0;//number of timer interupts for button 1
-int b1=0;
+int b1=0; //number to determine button 1 state
 
 int main(void)
 {
@@ -28,7 +28,7 @@ int main(void)
     P1IES|=BIT3;//flags interupt on negative
 
     TA0CCR0=1000;//sets timer0 to 1 Khz
-    TA0CCTL0=CCIE;
+    TA0CCTL0=CCIE;//enable CCR0 interupts
     TA0CTL= (MC_1 + TASSEL_2+TACLR);//set timer0 to up, SMCLK, no division
 
     _BIS_SR(LPM0_bits + GIE);//enters low power mode with interupts
@@ -39,14 +39,14 @@ int main(void)
 __interrupt void Timer0_A0_ISR (void)
 {
     if(count1<60)//checks if count is less than 60
-        count1+=1;//increments count
+        count1+=1;//increments count by 1
     if((count1>50)&(b1==1))//checks if count is greater than 50 and b1 is 1
     {
-        b1=-1;//sets b1 to negative
+        b1=-1;//sets b1 to negative 1
         P1OUT^=BIT0;//toggles led output
         P1IE|=BIT3;//enables button interupts
     }
-    if((count1>50)&(b1==-2))//checks if count is greater than 50 and b1 is 1
+    if((count1>50)&(b1==-2))//checks if count is greater than 50 and b1 is -2
     {
         P1OUT^=BIT0;//toggles led output
         b1=0;//sets b1 to 0
