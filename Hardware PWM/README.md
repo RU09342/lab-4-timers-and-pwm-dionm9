@@ -3,4 +3,4 @@ Not all processors had a hardware PWM option. The 5529 lacked the ability to con
 
 ## Extra Work
 ### Ultra Low Power
-Using ACLk, enablining HIGHZ GPIO pins on unused pins, and Low power mode 4, I was able to achieve a time of 3 minutes and 20 seconds. I'm sure this could be improved with more optimizations of clock dividers and PWM frequency. 
+Using ACLk, enablining HIGHZ GPIO pins on unused pins, and Low power mode 4, I was able to achieve a time of 4 minutes and 5 seconds. I'm sure this could be improved with more optimizations of clock dividers and PWM frequency. 
